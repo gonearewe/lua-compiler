@@ -72,3 +72,22 @@ func (l *luaState) Rotate(idx, n int) {
 	l.stack.reverse(m+1, t)
 	l.stack.reverse(p, t)
 }
+
+// set the top, pop the redundancy or push nil to achieve this
+func (l *luaState) SetTop(idx int) {
+	newTop := l.stack.absIndex(idx)
+	if newTop < 0 {
+		panic("stack underflow !")
+	}
+
+	n := l.stack.top - newTop
+	if n > 0 {
+		for i := 0; i < n; i++ {
+			l.stack.pop()
+		}
+	} else if n < 0 {
+		for i := o; i > n; i-- {
+			l.stack.push(nil)
+		}
+	}
+}
