@@ -1,6 +1,6 @@
 package state
 
-import _ "github.com/gonearewe/lua-compiler/api"
+import . "github.com/gonearewe/lua-compiler/go/api"
 
 // import _ "../api"
 

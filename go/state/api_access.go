@@ -57,61 +57,60 @@ following methods return the conversed form of the type of index idx to another 
 but only ToString() and ToStringX() actually modify the stack
 **************************/
 
-func (l *luaState)ToBoolean(idx int)bool{
-	val:=l.stack.get(idx)
+func (l *luaState) ToBoolean(idx int) bool {
+	val := l.stack.get(idx)
 	return convertToBoolean(val)
 }
 
-func (l *luaState)ToNumber(idx int)float64{
-	n,_:=l.ToNumberX(idx)
+func (l *luaState) ToNumber(idx int) float64 {
+	n, _ := l.ToNumberX(idx)
 	return n
 }
 
 // ToNumberX will tell you if the conversion is successful by returning bool
-func (l *luaState)ToNumberX(idx int)(float64,bool){
+func (l *luaState) ToNumberX(idx int) (float64, bool) {
 	val := l.stack.get(idx)
-	switch x:=val.(type){
+	switch x := val.(type) {
 	case float64:
-		return x,true
+		return x, true
 	case int64:
-		return float64(x),true
+		return float64(x), true
 	default:
-		return 0,false
+		return 0, false
 	}
 }
 
-func (l *luaState)ToInteger(idx int)int64{
-	n,_:=l.ToIntegerX(idx)
+func (l *luaState) ToInteger(idx int) int64 {
+	n, _ := l.ToIntegerX(idx)
 	return n
 }
 
 // ToIntegerX will tell you if the conversion is successful by returning bool
-func (l *luaState)ToIntegerX(idx int)(int64,bool){
+func (l *luaState) ToIntegerX(idx int) (int64, bool) {
 	val := l.stack.get(idx)
-	switch x:=val.(type){
-		return val.(int64)
-	}
+	i, ok := val.(int64)
+	return i, ok
 }
 
-func (l *luaState)ToString(idx int)string{
-	s,_:=l.ToStringX(idx)
+func (l *luaState) ToString(idx int) string {
+	s, _ := l.ToStringX(idx)
 	return s
 }
 
 // ToStringX will tell you if the conversion is successful by returning bool
 // notice this method will change the stack,
 // if the value of index idx can be conversed to string,it will be set to its string form,
-// if not, returns ("", false) and stack stays unchanged 
-func (l *luaState)ToStringX(idx int)(string,bool) {
-	val:=l.stack.get(idx)
-	switch x:=val.(type){
+// if not, returns ("", false) and stack stays unchanged
+func (l *luaState) ToStringX(idx int) (string, bool) {
+	val := l.stack.get(idx)
+	switch x := val.(type) {
 	case string:
-		return x,true
-	case int64,float64:
-		s:=fmt.Sprintf("%v", x)
-		l.stack.set(idx,s)  // 
-		return s,true
+		return x, true
+	case int64, float64:
+		s := fmt.Sprintf("%v", x)
+		l.stack.set(idx, s) //
+		return s, true
 	default:
-		return "",false
+		return "", false
 	}
 }
