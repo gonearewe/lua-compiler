@@ -40,3 +40,13 @@ func ShiftRight(a, n int64) int64 {
 		return ShiftLeft(a, -n)
 	}
 }
+
+/*****************************
+following functions provide means for type conversion
+*****************************/
+
+// bool in return value lists tell whether there is a precision loss
+func FloatToInteger(f float64) (int64, bool) {
+	i := int64(f)
+	return i, float64(i) == f
+}
