@@ -43,6 +43,8 @@ func convertToFloat(val luaValue) (float64, bool) {
 	case float64:
 		return x, true
 	case int64:
+		return float64(x), true
+	case string:
 		return number.ParserFloat(x)
 	default:
 		return 0, false
@@ -54,7 +56,7 @@ func convertToInteger(val luaValue) (int64, bool) {
 	case int64:
 		return x, true
 	case float64:
-		return number.ParserInteger(x)
+		return number.FloatToInteger(x)
 	case string:
 		return _stringToInteger(x)
 	default:
@@ -62,12 +64,14 @@ func convertToInteger(val luaValue) (int64, bool) {
 	}
 }
 
+// if string can not be conversed to integer directly,
+// it will be conversed to float before finally to integer
 func _stringToInteger(s string) (int64, bool) {
 	if i, ok := number.ParserInteger(s); ok {
 		return i, true
 	}
 	if f, ok := number.ParserFloat(s); ok {
-		return number.ParserInteger(f)
+		return number.FloatToInteger(f)
 	}
 
 	return 0, false

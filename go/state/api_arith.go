@@ -61,42 +61,43 @@ var operators = []operator{
 	operator{"__bnot", bnot, nil},
 }
 
-func (l *luaState)Arith(op ArithOp){
-	var a,b luaValue // operands
-	b=l.stack.pop()
+func (l *luaState) Arith(op ArithOp) {
+	var a, b luaValue // operands
+	b = l.stack.pop()
 
-	if op!=LUA_OPUNM&&op!=LUA_OPBNOT{
-		a=l.stack.pop()
-	}else{
-		a=b
+	if op != LUA_OPUNM && op != LUA_OPBNOT {
+		a = l.stack.pop()
+	} else {
+		a = b
 	}
 
-	operator:=operators[op]
-	if result:=_arith(a,b,operator);result!=nil{
-		l.stack.push(result)else{
-			panic("arithmetic error !")
-		}
+	operator := operators[op]
+	if result := _arith(a, b, operator); result != nil {
+		l.stack.push(result)
+	} else {
+		panic("arithmetic error !")
 	}
+
 }
 
-func _arith(a,b luaValue,op operator)luaValue{
-	if op.floatFunc==nil{  // bitwise
-		if x,ok:=convertToInteger(a);ok{
-			if y,ok:=convertToInteger(b);ok{
-				return op.integerFunc(x,y)
+func _arith(a, b luaValue, op operator) luaValue {
+	if op.floatFunc == nil { // bitwise
+		if x, ok := convertToInteger(a); ok {
+			if y, ok := convertToInteger(b); ok {
+				return op.integerFunc(x, y)
 			}
 		}
-	}else{ // arith
-		if op.integerFunc!=nil{
-			if x,ok:=a.(int64);ok{
-				if y,ok:=b.(int64);ok{
-					return op.integerFunc(x,y)
+	} else { // arith
+		if op.integerFunc != nil {
+			if x, ok := a.(int64); ok {
+				if y, ok := b.(int64); ok {
+					return op.integerFunc(x, y)
 				}
 			}
 		}
-		if x,ok:=convertToFloat(a);ok{
-			if y,ok:=convertToFloat(b);ok{
-				return op.floatFunc(x,y)
+		if x, ok := convertToFloat(a); ok {
+			if y, ok := convertToFloat(b); ok {
+				return op.floatFunc(x, y)
 			}
 		}
 	}

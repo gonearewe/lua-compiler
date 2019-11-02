@@ -46,7 +46,7 @@ type BasicAPI interface {
 	ToNumberX(idx int) (float64, bool)
 	ToString(idx int) string
 	ToStringX(idx int) (string, bool)
-	ToGoFunction(idx int) GoFunction
+	// ToGoFunction(idx int) GoFunction
 	ToThread(idx int) LuaState
 	ToPointer(idx int) interface{}
 	RawLen(idx int) uint
@@ -57,8 +57,8 @@ type BasicAPI interface {
 	PushNumber(n float64)
 	PushString(s string)
 	PushFString(fmt string, a ...interface{})
-	PushGoFunction(f GoFunction)
-	PushGoClosure(f GoFunction, n int)
+	// PushGoFunction(f GoFunction)
+	// PushGoClosure(f GoFunction, n int)
 	PushGlobalTable()
 	PushThread() bool
 	/* Comparison and arithmetic functions */
@@ -83,7 +83,7 @@ type BasicAPI interface {
 	RawSetI(idx int, i int64)
 	SetMetatable(idx int)
 	SetGlobal(name string)
-	Register(name string, f GoFunction)
+	// Register(name string, f GoFunction)
 	/* 'load' and 'call' functions (load and run Lua code) */
 	Load(chunk []byte, chunkName, mode string) int
 	Call(nArgs, nResults int)

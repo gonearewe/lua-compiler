@@ -2,9 +2,11 @@ package state
 
 import (
 	"fmt"
+
+	. "github.com/gonearewe/lua-compiler/go/api"
 )
 
-func (l *luaState) Type(idx int) LuaState {
+func (l *luaState) Type(idx int) LuaType {
 	if l.stack.isValid(idx) {
 		val := l.stack.get(idx)
 		return typeOf(val)

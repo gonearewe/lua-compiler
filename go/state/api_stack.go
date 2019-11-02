@@ -86,7 +86,7 @@ func (l *luaState) SetTop(idx int) {
 			l.stack.pop()
 		}
 	} else if n < 0 {
-		for i := o; i > n; i-- {
+		for i := 0; i > n; i-- {
 			l.stack.push(nil)
 		}
 	}
