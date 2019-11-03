@@ -37,7 +37,7 @@ var (
 	bxor = func(a, b int64) int64 { return a ^ b }
 	bnot = func(a, _ int64) int64 { return ^a }
 
-	shi = number.ShiftLeft
+	shl = number.ShiftLeft
 	shr = number.ShiftRight
 
 	iunm = func(a, _ int64) int64 { return -a }
