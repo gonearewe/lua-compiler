@@ -1,5 +1,7 @@
 package vm
 
+import "github.com/gonearewe/lua-compiler/go/api"
+
 const (
 	IABC  = iota // [  B:9  ][  C:9  ][ A:8  ][OP:6]
 	IABx         // [      Bx:18     ][ A:8  ][OP:6]
@@ -69,10 +71,11 @@ const (
 type opcode struct {
 	testFlag byte // operator is a test (next instruction must be a jump)
 	setAFlag byte // instruction set register A
-	argBMode byte
-	argCMode byte
-	opMode   byte
+	argBMode byte // B arg mode
+	argCMode byte // C arg mode
+	opMode   byte // op mode
 	name     string
+	action   func(i Instruction, vm api.LuaVM)
 }
 
 var opcodes = []opcode{

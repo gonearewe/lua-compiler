@@ -1,5 +1,7 @@
 package vm
 
+import "github.com/gonearewe/lua-compiler/go/api"
+
 type Instruction uint32
 
 const MAXARG_Bx = 1<<18 - 1       // 262143
