@@ -106,3 +106,23 @@ func test(i Instruction, vm LuaVM) {
 		vm.AddPC(1)
 	}
 }
+
+func forPrep(i Instruction, vm LuaVM) {
+	s, sBx := i.AsBx()
+	a += 1
+
+	// R(A)-=R(A+2)
+	vm.PushValue(a + 2)
+	vm.PushValue(a)
+	vm.Arith(LUA_OPADD)
+	vm.Replace(a)
+
+	// R(A)<?=R(A+1)
+	isPositiveStep := vm.ToNumber(a+2) >= 0
+	if isPositiveStep && vm.Compare(a, a+1, LUA_OPLE) ||
+		!isPositiveStep && vm.Compare(a+1, a, LUA_OPLE) {
+		vm.AddPC(sBx)   // pc+=sBx
+		vm.Copy(a, a+3) // R(A+3)=R(A)
+	}
+
+}
