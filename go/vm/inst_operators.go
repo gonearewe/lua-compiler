@@ -39,6 +39,18 @@ func _unaryArith(i Instruction, vm LuaVM, op ArithOp) {
 	vm.Replace(a)
 }
 
+/* len & concat */
+
+// R(A) := length of R(B)
+func length(i Instruction, vm LuaVM) {
+	a, b, _ := i.ABC()
+	a += 1
+	b += 1
+
+	vm.Len(b)
+	vm.Replace(a)
+}
+
 func _len(i Instruction, vm LuaVM) {
 	a, b, _ := i.ABC()
 	a += 1
@@ -65,6 +77,13 @@ func concat(i Instruction, vm LuaVM) {
 	vm.Replace(a)
 }
 
+/* compare */
+
+func eq(i Instruction, vm LuaVM) { _compare(i, vm, LUA_OPEQ) } // ==
+func lt(i Instruction, vm LuaVM) { _compare(i, vm, LUA_OPLT) } // <
+func le(i Instruction, vm LuaVM) { _compare(i, vm, LUA_OPLE) } // <=
+
+// if ((RK(B) op RK(C)) ~= A) then pc++
 func _compare(i Instruction, vm LuaVM, op CompareOp) {
 	a, b, c := i.ABC()
 
@@ -105,24 +124,4 @@ func test(i Instruction, vm LuaVM) {
 	if vm.ToBoolean(a) != (c != 0) {
 		vm.AddPC(1)
 	}
-}
-
-func forPrep(i Instruction, vm LuaVM) {
-	s, sBx := i.AsBx()
-	a += 1
-
-	// R(A)-=R(A+2)
-	vm.PushValue(a + 2)
-	vm.PushValue(a)
-	vm.Arith(LUA_OPADD)
-	vm.Replace(a)
-
-	// R(A)<?=R(A+1)
-	isPositiveStep := vm.ToNumber(a+2) >= 0
-	if isPositiveStep && vm.Compare(a, a+1, LUA_OPLE) ||
-		!isPositiveStep && vm.Compare(a+1, a, LUA_OPLE) {
-		vm.AddPC(sBx)   // pc+=sBx
-		vm.Copy(a, a+3) // R(A+3)=R(A)
-	}
-
 }

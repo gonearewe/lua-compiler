@@ -66,7 +66,7 @@ offset will increase automatically
 
 // return the list of instructions
 func (r *reader) readCode() []uint32 {
-	code := make([]uint32, r.readUint64())
+	code := make([]uint32, r.readUint32())
 	for i := range code {
 		code[i] = r.readUint32()
 	}

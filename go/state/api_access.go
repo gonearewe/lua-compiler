@@ -15,6 +15,29 @@ func (l *luaState) Type(idx int) LuaType {
 	return LUA_TNONE
 }
 
+func (l *luaState) TypeName(tp LuaType) string {
+	switch tp {
+	case LUA_TNONE:
+		return "no value"
+	case LUA_TNIL:
+		return "nil"
+	case LUA_TBOOLEAN:
+		return "boolean"
+	case LUA_TNUMBER:
+		return "number"
+	case LUA_TSTRING:
+		return "string"
+	case LUA_TTABLE:
+		return "table"
+	case LUA_TFUNCTION:
+		return "function"
+	case LUA_TTHREAD:
+		return "thread"
+	default:
+		return "userdata"
+	}
+}
+
 /**************************
 following methods check the type of index idx and return bool
 **************************/

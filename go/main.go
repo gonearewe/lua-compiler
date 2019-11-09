@@ -32,13 +32,13 @@ func luaMain(proto *binchunk.Prototype) {
 		pc := ls.PC()
 		inst := vm.Instruction(ls.Fetch())
 
-		if inst.Opcode() != vm.OP_RETURN {
-			inst.Execute(ls)
-			fmt.Printf("[%02d] %s", pc+1, inst.OpName())
-			printStack(ls)
-		} else {
-			break
-		}
+		// if inst.Opcode() != vm.OP_RETURN {
+		inst.Execute(ls)
+		fmt.Printf("[%02d] %s", pc+1, inst.OpName())
+		printStack(ls)
+		// } else {
+		// break
+		// }
 	}
 }
 
