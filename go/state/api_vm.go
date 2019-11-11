@@ -14,6 +14,8 @@ func (l *luaState) Fetch() uint32 {
 	return i
 }
 
+// Push a constant into the stack whose index in the
+// constant list is given by idx
 func (l *luaState) GetConst(idx int) {
 	c := l.proto.Constants[idx]
 	l.stack.push(c)

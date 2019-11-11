@@ -49,6 +49,14 @@ type LuaState interface {
 	/* miscellaneous functions */
 	Len(idx int)
 	Concat(n int)
+	NewTable()
+	CreateTable(nArr, nRec int)
+	SetTable(idx int)
+	SetField(idx int, k string)
+	SetI(idx int, i int64)
+	GetTable(idx int) LuaType
+	GetField(idx int, k string) LuaType
+	GetI(idx int, i int64) LuaType
 }
 
 type BasicAPI interface {
