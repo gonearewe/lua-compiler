@@ -16,8 +16,9 @@ func (i Instruction) Opcode() int {
 // extracts the operands from the instruction
 func (i Instruction) ABC() (a, b, c int) {
 	a = int(i >> 6 & 0xFF)
-	b = int(i >> 14 & 0x1FF)
-	c = int(i >> 23 & 0x1FF)
+	// NOTICE the order is a,c,b
+	c = int(i >> 14 & 0x1FF)
+	b = int(i >> 23 & 0x1FF)
 	return
 }
 
