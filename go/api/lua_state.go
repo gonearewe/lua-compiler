@@ -57,6 +57,8 @@ type LuaState interface {
 	GetTable(idx int) LuaType
 	GetField(idx int, k string) LuaType
 	GetI(idx int, i int64) LuaType
+	Load(chunk []byte, chunkName, mode string) int
+	Call(nArgs, nResults int)
 }
 
 type BasicAPI interface {

@@ -11,6 +11,11 @@ type luaStack struct {
 	*/
 	slots []luaValue
 	top   int // index of the top of the lua stack, notice that index starts with 1
+
+	prev    *luaStack // use linked list to achieve function call-back stack
+	closure *luaClosure
+	varargs []luaValue
+	pc      int
 }
 
 func newLuaStack(size int) *luaStack {
@@ -99,5 +104,35 @@ func (l *luaStack) reverse(from, to int) {
 		slots[from], slots[to] = slots[to], slots[from]
 		from++
 		to--
+	}
+}
+
+// Returns a slice of n(given) luaValue popped from the stack.
+func (l *luaStack) popN(n int) []luaValue {
+	// allocate first when we know how much space we need
+	vals := make([]luaValue, n)
+
+	for i := n - 1; i >= 0; i-- {
+		vals[i] = l.pop()
+	}
+
+	return vals
+}
+
+// Push n(given) luaValue from the slice vals(given) into the stack,
+// nil is pushed when vals(given) can't offer enough number of luaValue,
+// redundant luaValue are abandoned when vals(given) offers too many.
+func (l *luaStack) pushN(vals []luaValue, n int) {
+	nVals = len(vals)
+	if n < 0 {
+		n = nVals
+	}
+
+	for i := 0; i < n; i++ {
+		if i < nVals {
+			l.push(vals[i])
+		} else {
+			l.push(nil)
+		}
 	}
 }
