@@ -7,4 +7,7 @@ type LuaVM interface {
 	Fetch() uint32    // fetch current value of PC, and go to next instruction
 	GetConst(idx int) // push requested const into the stack
 	GetRK(rk int)     // push requested const or value into the stack
+	RegisterCount() int
+	LoadVararg(n int)
+	LoadProto(idx int)
 }

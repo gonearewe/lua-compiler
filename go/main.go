@@ -1,15 +1,10 @@
 package main
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 
-	"github.com/gonearewe/lua-compiler/go/api"
-
-	"github.com/gonearewe/lua-compiler/go/binchunk"
 	"github.com/gonearewe/lua-compiler/go/state"
-	"github.com/gonearewe/lua-compiler/go/vm"
 )
 
 func main() {
@@ -18,11 +13,14 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-		proto := binchunk.Undump(data)
-		luaMain(proto)
+
+		ls := state.New()
+		ls.Load(data, os.Args[1], "b")
+		ls.Call(0, 0)
 	}
 }
 
+/*
 func luaMain(proto *binchunk.Prototype) {
 	nRegs := int(proto.MaxStackSize)
 	ls := state.New(nRegs+8, proto)
@@ -109,7 +107,7 @@ func printStack(ls api.LuaState) {
 /**
 Read BinaryChunk Information
 **/
-
+/*
 func list(f *binchunk.Prototype) {
 	printHeader(f)
 	printCode(f)
@@ -192,3 +190,4 @@ func upvalName(f *binchunk.Prototype, idx int) string {
 	}
 	return "-"
 }
+*/
