@@ -1,8 +1,7 @@
 package state
 
 import (
-	"fmt"
-
+	"github.com/gonearewe/lua-compiler/go/api"
 	"github.com/gonearewe/lua-compiler/go/vm"
 
 	"github.com/gonearewe/lua-compiler/go/binchunk"
@@ -19,13 +18,19 @@ func (l *luaState) Load(chunk []byte, chunkName, mode string) int {
 func (l *luaState) Call(nArgs, nResults int) {
 	val := l.stack.get(-(nArgs + 1))
 	if c, ok := val.(*closure); ok {
-		fmt.Printf(
-			"call %s<%d,%d>\n",
-			c.proto.Source,
-			c.proto.LineDefined,
-			c.proto.LastLineDefined,
-		)
-		l.callLuaClosure(nArgs, nResults, c)
+		if c.proto != nil {
+			l.callLuaClosure(nArgs, nResults, c)
+		} else {
+			l.callGoClosure(nArgs, nResults, c)
+		}
+		// DEBUG
+		// fmt.Printf(
+		// 	"call %s<%d,%d>\n",
+		// 	c.proto.Source,
+		// 	c.proto.LineDefined,
+		// 	c.proto.LastLineDefined,
+		// )
+
 	} else {
 		panic("not function !")
 	}
@@ -36,7 +41,7 @@ func (l *luaState) callLuaClosure(nArgs, nResults int, c *closure) {
 	nParams := int(c.proto.NumParams)
 	isVararg := c.proto.IsVararg == 1
 
-	newStack := newLuaStack(nRegs + 20)
+	newStack := newLuaStack(nRegs+api.LUA_MINSTACK, l)
 	newStack.closure = c
 
 	// pass parameters to the called function
@@ -68,5 +73,24 @@ func (l *luaState) runLuaClosure() {
 		if inst.Opcode() == vm.OP_RETURN {
 			break
 		}
+	}
+}
+
+func (l *luaState) callGoClosure(nArgs, nResults int, c *closure) {
+	newStack := newLuaStack(nArgs+api.LUA_MINSTACK, l)
+	newStack.closure = c
+
+	args := l.stack.popN(nArgs)
+	newStack.pushN(args, nArgs)
+	l.stack.pop() // desert goClosure
+
+	l.pushLuaStack(newStack) // call
+	r := c.goFunc(l)         // execuate goFunc
+	l.popLuaStack()          // return
+
+	if nResults != 0 { // push return values if any
+		results := newStack.popN(r)
+		l.stack.check(len(results))
+		l.stack.pushN(results, nResults)
 	}
 }

@@ -131,3 +131,24 @@ func (l *luaState) ToStringX(idx int) (string, bool) {
 		return "", false
 	}
 }
+
+func (l *luaState) IsGoFunction(idx int) bool {
+	val := l.stack.get(idx)
+	if c, ok := val.(*closure); ok {
+		return c.goFunc != nil
+	}
+
+	return false
+}
+
+// Converse the luaValue whose index in the stack is given by idx
+// to GoFunction and return it, return nil when facing conversion failure;
+// This method doesn't change the stack.
+func (l *luaState) ToGoFunction(idx int) GoFunction {
+	val := l.stack.get(idx)
+	if c, ok := val.(*closure); ok {
+		return c.goFunc
+	}
+
+	return nil
+}

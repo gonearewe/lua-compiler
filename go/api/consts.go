@@ -1,6 +1,13 @@
 package api
 
 const (
+	LUA_MINSTACK            = 20
+	LUAI_MAXSTACK           = 1000000
+	LUA_REGISTRYINDEX       = -LUAI_MAXSTACK - 1000
+	LUA_RIDX_GLOBALS  int64 = 2
+)
+
+const (
 	LUA_TNONE = iota - 1 // -1
 	LUA_TNIL
 	LUA_TBOOLEAN

@@ -1,9 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 
+	"github.com/gonearewe/lua-compiler/go/api"
 	"github.com/gonearewe/lua-compiler/go/state"
 )
 
@@ -15,9 +17,31 @@ func main() {
 		}
 
 		ls := state.New()
+		ls.Register("print", print)
 		ls.Load(data, os.Args[1], "b")
 		ls.Call(0, 0)
 	}
+}
+
+func print(ls api.LuaState) int {
+	nArgs := ls.GetTop()
+	for i := 1; i <= nArgs; i++ {
+		if ls.IsBoolean(i) {
+			fmt.Printf("%t", ls.ToBoolean(i))
+		} else if ls.IsString(i) {
+			fmt.Print(ls.ToString(i))
+		} else {
+			fmt.Print(ls.TypeName(ls.Type(i)))
+		}
+
+		if i < nArgs {
+			fmt.Print("\t")
+		}
+	}
+
+	fmt.Println()
+
+	return 0
 }
 
 /*

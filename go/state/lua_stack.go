@@ -1,5 +1,9 @@
 package state
 
+import (
+	"github.com/gonearewe/lua-compiler/go/api"
+)
+
 type luaStack struct {
 	/*
 	   lua stack : | 1 | 2 | 3 | 4 | 5 |
@@ -16,12 +20,15 @@ type luaStack struct {
 	closure *closure
 	varargs []luaValue
 	pc      int
+
+	state *luaState
 }
 
-func newLuaStack(size int) *luaStack {
+func newLuaStack(size int, state *luaState) *luaStack {
 	return &luaStack{
 		slots: make([]luaValue, size),
 		top:   0, // 0 means it is empty
+		state: state,
 	}
 }
 
@@ -61,6 +68,10 @@ func (l *luaStack) pop() luaValue {
 // given relevant index -2, returns absolute index 4,
 // given relevant index 2, returns absolute index 2
 func (l *luaStack) absIndex(idx int) int {
+	if idx <= api.LUA_REGISTRYINDEX {
+		return idx // support fake index
+	}
+
 	if idx >= 0 {
 		return idx
 	}
@@ -69,13 +80,22 @@ func (l *luaStack) absIndex(idx int) int {
 }
 
 func (l *luaStack) isValid(idx int) bool {
+	if idx == api.LUA_REGISTRYINDEX {
+		return true
+	}
+
 	absIdx := l.absIndex(idx)
 	return absIdx > 0 && absIdx <= l.top
 }
 
-// get value from the stack by relevant index
-// returns nil if the index is invalid
+// Get value from the stack by relevant index,
+// returns the registry if idx is fake index of registry
+// returns nil if the index is invalid.
 func (l *luaStack) get(idx int) luaValue {
+	if idx == api.LUA_REGISTRYINDEX {
+		return l.state.registry
+	}
+
 	absIdx := l.absIndex(idx)
 
 	if absIdx > 0 && absIdx <= l.top {
@@ -86,6 +106,11 @@ func (l *luaStack) get(idx int) luaValue {
 }
 
 func (l *luaStack) set(idx int, val luaValue) {
+	if idx == api.LUA_REGISTRYINDEX {
+		l.state.registry = val.(*luaTable)
+		return
+	}
+
 	absIdx := l.absIndex(idx)
 
 	if absIdx > 0 && absIdx <= l.top {

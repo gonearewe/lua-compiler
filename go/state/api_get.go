@@ -3,7 +3,9 @@ APIs of a series of methods with the purpose of getting value from the table
 */
 package state
 
-import . "github.com/gonearewe/lua-compiler/go/api"
+import (
+	. "github.com/gonearewe/lua-compiler/go/api"
+)
 
 // When you know exactly how much space to allocate,
 // avoiding frequent dynamic allocation.
@@ -49,4 +51,11 @@ func (l *luaState) GetField(idx int, k string) LuaType {
 func (l *luaState) GetI(idx int, i int64) LuaType {
 	t := l.stack.get(idx)
 	return l.getTable(t, i)
+}
+
+// Get and push the value who belongs to Global Table and whose key is
+// given by name
+func (l *luaState) GetGlobal(name string) LuaType {
+	t := l.registry.get(LUA_RIDX_GLOBALS)
+	return l.getTable(t, name)
 }
