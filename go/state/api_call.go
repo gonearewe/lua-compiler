@@ -12,6 +12,11 @@ func (l *luaState) Load(chunk []byte, chunkName, mode string) int {
 	c := newLuaClosure(proto)
 	l.stack.push(c)
 
+	if len(proto.Upvalues) > 0 { // set _ENV
+		env := l.registry.get(api.LUA_RIDX_GLOBALS)
+		c.upvals[0] = &upvalue{&env}
+	}
+
 	return 0
 }
 

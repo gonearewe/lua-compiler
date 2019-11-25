@@ -61,6 +61,7 @@ type LuaState interface {
 	Load(chunk []byte, chunkName, mode string) int
 	Call(nArgs, nResults int)
 	PushGoFunction(f GoFunction)
+	PushGoClosure(f GoFunction, n int)
 	IsGoFunction(idx int) bool
 	ToGoFunction(idx int) GoFunction
 	PushGlobalTable()
@@ -159,4 +160,8 @@ type BasicAPI interface {
 	Status() int
 	IsYieldable() bool
 	GetStack() bool // debug
+}
+
+func LuaUpvalueIndex(i int) int {
+	return LUA_REGISTRYINDEX - i
 }

@@ -48,7 +48,37 @@ func (l *luaState) LoadVararg(n int) {
 // Wrap the subfunction whose index in the Protos List is
 // given by idx to a closure and push it into the stack.
 func (l *luaState) LoadProto(idx int) {
-	proto := l.stack.closure.proto.Protos[idx]
-	closure := newLuaClosure(proto)
-	l.stack.push(closure)
+	stack := l.stack
+	subProto := stack.closure.proto.Protos[idx]
+	closure := newLuaClosure(subProto)
+	stack.push(closure)
+
+	// Load upvalues.
+	for i, uvInfo := range subProto.Upvalues {
+		uvIdx := int(uvInfo.Idx)
+		if uvInfo.Instack == 1 {
+			if stack.openuvs == nil {
+				stack.openuvs = map[int]*upvalue{}
+			}
+
+			if openuv, found := stack.openuvs[uvIdx]; found {
+				closure.upvals[i] = openuv
+			} else {
+				closure.upvals[i] = &upvalue{&stack.slots[uvIdx]}
+				stack.openuvs[uvIdx] = closure.upvals[i]
+			}
+		} else {
+			closure.upvals[i] = stack.closure.upvals[uvIdx]
+		}
+	}
+}
+
+func (l *luaState) CloseUpvalues(a int) {
+	for i, openuv := range l.stack.openuvs {
+		if i >= a-1 {
+			val := *openuv.val
+			openuv.val = &val
+			delete(l.stack.openuvs, i)
+		}
+	}
 }

@@ -3,7 +3,7 @@ package api
 const (
 	LUA_MINSTACK            = 20
 	LUAI_MAXSTACK           = 1000000
-	LUA_REGISTRYINDEX       = -LUAI_MAXSTACK - 1000
+	LUA_REGISTRYINDEX       = -LUAI_MAXSTACK - 1000 // fake index or virtual index
 	LUA_RIDX_GLOBALS  int64 = 2
 )
 
