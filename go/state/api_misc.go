@@ -5,6 +5,8 @@ func (l *luaState) Len(idx int) {
 	val := l.stack.get(idx)
 	if s, ok := val.(string); ok {
 		l.stack.push(int64(len(s)))
+	} else if result, ok := callMetamethod(val, val, "__len", l); ok {
+		l.stack.push(result)
 	} else if t, ok := val.(*luaTable); ok {
 		l.stack.push(int64(t.len()))
 	} else {
@@ -27,6 +29,13 @@ func (l *luaState) Concat(n int) {
 				l.stack.pop()
 				l.stack.push(s1 + s2)
 
+				continue
+			}
+
+			b := l.stack.pop()
+			a := l.stack.pop()
+			if result, ok := callMetamethod(a, b, "__concat", l); ok {
+				l.stack.push(result)
 				continue
 			}
 

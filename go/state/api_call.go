@@ -20,9 +20,30 @@ func (l *luaState) Load(chunk []byte, chunkName, mode string) int {
 	return 0
 }
 
+// Call LuaClosure, GoClosure or Metamethod with nArgs(number of args)
+// and nResults(number of requesting return values).
+// EXAMPLE1: for stack[5,2,fun,45,13], Call(2,1) calls fun(45,13) requesting one return value,
+// after that, the stack is [5,2,<returnValue 1>].
+// EXAMPLE2: for stack[5,2,val,45,13], val is not a closure but has a metamehod mf,
+// Call(2,1) calls mf(val,45,13) requesting one return value,
+// after that, the stack is [5,2,<returnValue 1>].
 func (l *luaState) Call(nArgs, nResults int) {
 	val := l.stack.get(-(nArgs + 1))
-	if c, ok := val.(*closure); ok {
+
+	c, ok := val.(*closure)
+	if !ok { // support metamethod
+		if mf := getMetafield(val, "__call", l); mf != nil {
+			if c, ok = mf.(*closure); ok { // ok can be modified here
+				l.stack.push(val)
+				l.Insert(-(nArgs + 2))
+				nArgs += 1
+				// for stack[5,2,val,45,13], val is not a closure but has a metamehod mf,
+				// now the stack is [5,2,mf,val,45,13] and args include val, 45 and 13
+			}
+		}
+	}
+
+	if ok { // call closure or metamethod
 		if c.proto != nil {
 			l.callLuaClosure(nArgs, nResults, c)
 		} else {
@@ -51,7 +72,7 @@ func (l *luaState) callLuaClosure(nArgs, nResults int, c *closure) {
 
 	// pass parameters to the called function
 	funcAndArgs := l.stack.popN(nArgs + 1)
-	newStack.pushN(funcAndArgs[1:], nParams)
+	newStack.pushN(funcAndArgs[1:], nParams) // funcAndArgs[0] is the closure
 	newStack.top = nRegs
 	if nArgs > nParams && isVararg {
 		newStack.varargs = funcAndArgs[nParams+1:]

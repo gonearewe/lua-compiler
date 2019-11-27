@@ -1,11 +1,11 @@
 package state
 
 import (
+	"fmt"
+
 	. "github.com/gonearewe/lua-compiler/go/api"
 	"github.com/gonearewe/lua-compiler/go/number"
 )
-
-// import _ "../api"
 
 type luaValue interface{}
 
@@ -79,4 +79,56 @@ func _stringToInteger(s string) (int64, bool) {
 	}
 
 	return 0, false
+}
+
+// Set metatable for given luaValue, every luaTable contains a metatable
+// and for other luaValue, each type shares one metatable in the registry.
+func setMetatable(val luaValue, mt *luaTable, ls *luaState) {
+	if t, ok := val.(*luaTable); ok {
+		t.metatable = mt
+		return
+	}
+
+	key := fmt.Sprintf("_MT%d", typeOf(val))
+	ls.registry.put(key, mt)
+}
+
+// Get metatable for given luaValue, every luaTable contains a metatable
+// and for other luaValue, each type shares one metatable in the registry.
+func getMetatable(val luaValue, ls *luaState) *luaTable {
+	if t, ok := val.(*luaTable); ok {
+		return t.metatable
+	}
+
+	key := fmt.Sprintf("_MT%d", typeOf(val))
+	if mt := ls.registry.get(key); mt != nil {
+		return mt.(*luaTable)
+	}
+
+	return nil
+}
+
+func callMetamethod(a, b luaValue, mmName string, ls *luaState) (luaValue, bool) {
+	var mm luaValue
+	if mm = getMetafield(a, mmName, ls); mm == nil {
+		if mm = getMetafield(b, mmName, ls); mm == nil {
+			return nil, false
+		}
+	}
+
+	ls.stack.check(4)
+	ls.stack.push(mm)
+	ls.stack.push(a)
+	ls.stack.push(b)
+	ls.Call(2, 1)
+
+	return ls.stack.pop(), true
+}
+
+func getMetafield(val luaValue, fieldName string, ls *luaState) luaValue {
+	if mt := getMetatable(val, ls); mt != nil {
+		return mt.get(fieldName)
+	}
+
+	return nil
 }

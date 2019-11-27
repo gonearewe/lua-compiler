@@ -161,6 +161,8 @@ func (l *luaStack) reverse(from, to int) {
 }
 
 // Returns a slice of n(given) luaValue popped from the stack.
+// NOTICE: for stack[7,8,36,9,5], popN(3) returns [36,9,5] instead of [5,9,36],
+// apparently returned slice follow the order of the stack.
 func (l *luaStack) popN(n int) []luaValue {
 	// allocate first when we know how much space we need
 	vals := make([]luaValue, n)

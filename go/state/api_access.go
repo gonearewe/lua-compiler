@@ -6,6 +6,18 @@ import (
 	. "github.com/gonearewe/lua-compiler/go/api"
 )
 
+func (self *luaState) RawLen(idx int) uint {
+	val := self.stack.get(idx)
+	switch x := val.(type) {
+	case string:
+		return uint(len(x))
+	case *luaTable:
+		return uint(x.len())
+	default:
+		return 0
+	}
+}
+
 func (l *luaState) Type(idx int) LuaType {
 	if l.stack.isValid(idx) {
 		val := l.stack.get(idx)

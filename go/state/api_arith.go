@@ -74,10 +74,16 @@ func (l *luaState) Arith(op ArithOp) {
 	operator := operators[op]
 	if result := _arith(a, b, operator); result != nil {
 		l.stack.push(result)
-	} else {
-		panic("arithmetic error !")
+		return
 	}
 
+	mm := operator.metamethod // support metamethod
+	if result, ok := callMetamethod(a, b, mm, l); ok {
+		l.stack.push(result)
+		return
+	}
+
+	panic("arithmetic error !")
 }
 
 func _arith(a, b luaValue, op operator) luaValue {

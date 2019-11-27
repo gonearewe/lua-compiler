@@ -68,6 +68,14 @@ type LuaState interface {
 	GetGlobal(name string) LuaType
 	SetGlobal(name string)
 	Register(name string, f GoFunction)
+	GetMetatable(idx int) bool
+	SetMetatable(idx int)
+	RawEqual(idx1, idx2 int) bool
+	RawLen(idx int) uint
+	RawGet(idx int) LuaType
+	RawGetI(idx int, i int64) LuaType
+	RawSet(idx int)
+	RawSetI(idx int, i int64)
 }
 
 type BasicAPI interface {

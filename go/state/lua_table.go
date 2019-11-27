@@ -9,8 +9,9 @@ import (
 // In lua, if the keys of the Table are continus int, the table is
 // stored in memory as Array
 type luaTable struct {
-	arr  []luaValue
-	_map map[luaValue]luaValue
+	metatable *luaTable
+	arr       []luaValue
+	_map      map[luaValue]luaValue
 }
 
 func newLuaTable(nArr, nRec int) *luaTable {
@@ -115,4 +116,8 @@ func (l *luaTable) _expandArray() {
 
 func (l *luaTable) len() int {
 	return len(l.arr)
+}
+
+func (l *luaTable) hasMetafield(fieldName string) bool {
+	return l.metatable != nil && l.metatable.get(fieldName) != nil
 }
