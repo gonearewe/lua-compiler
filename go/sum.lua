@@ -1,12 +1,30 @@
-t={a=1,b=2,c=3}
-for k,v in pairs(t) do
-    print(k,v)
-end
+--chapter 13
+function div0(a, b)
+    if b == 0 then
+      error("DIV BY ZERO !")
+    else
+      return a / b
+    end
+  end
+  
+function div1(a, b) return div0(a, b) end
+function div2(a, b) return div1(a, b) end
 
-t={"a","b","c"}
-for k,v in ipairs(t) do
-    print(k,v)
-end
+ok, result = pcall(div2, 4, 2); print(ok, result)
+ok, err = pcall(div2, 5, 0);    print(ok, err)
+ok, err = pcall(div2, {}, {});  print(ok, err)
+
+-- chapter 12
+-- t={a=1,b=2,c=3}
+-- for k,v in pairs(t) do
+--     print(k,v)
+-- end
+
+-- t={"a","b","c"}
+-- for k,v in ipairs(t) do
+--     print(k,v)
+-- end
+
 -- chapter 10
 -- function newCounter(  )
 --     local count =0

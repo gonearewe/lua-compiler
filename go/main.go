@@ -18,61 +18,74 @@ func main() {
 
 		ls := state.New()
 		ls.Register("print", print)
-		ls.Register("pairs", pairs)
-		ls.Register("ipairs", iPairs)
+		ls.Register("error", error)
+		ls.Register("pcall", pCall)
 		ls.Load(data, os.Args[1], "b")
 		ls.Call(0, 0)
 	}
 }
 
-func next(ls api.LuaState) int {
-	ls.SetTop(2)
-	if ls.Next(1) {
-		return 2
-	} else {
-		ls.PushNil()
-		return 1
-	}
+func error(ls api.LuaState) int {
+	return ls.Error()
 }
 
-func pairs(l api.LuaState) int {
-	l.PushGoFunction(next)
-	l.PushValue(1)
-	l.PushNil()
+func pCall(ls api.LuaState) int {
+	nArgs := ls.GetTop() - 1
+	status := ls.PCall(nArgs, -1, 0)
+	ls.PushBoolean(status == api.LUA_OK)
+	ls.Insert(1)
 
-	return 3
+	return ls.GetTop()
 }
 
-func iPairs(l api.LuaState) int {
-	l.PushGoFunction(_iPairsAux)
-	l.PushValue(1)
-	l.PushInteger(0)
+// func next(ls api.LuaState) int {
+// 	ls.SetTop(2)
+// 	if ls.Next(1) {
+// 		return 2
+// 	} else {
+// 		ls.PushNil()
+// 		return 1
+// 	}
+// }
 
-	return 3
-}
+// func pairs(l api.LuaState) int {
+// 	l.PushGoFunction(next)
+// 	l.PushValue(1)
+// 	l.PushNil()
 
-func _iPairsAux(l api.LuaState) int {
-	i := l.ToInteger(2) + 1
-	l.PushInteger(i)
-	if l.GetI(1, i) == api.LUA_TNIL {
-		return 1
-	} else {
-		return 2
-	}
-}
+// 	return 3
+// }
 
-func getMetatable(ls api.LuaState) int {
-	if !ls.GetMetatable(1) {
-		ls.PushNil()
-	}
+// func iPairs(l api.LuaState) int {
+// 	l.PushGoFunction(_iPairsAux)
+// 	l.PushValue(1)
+// 	l.PushInteger(0)
 
-	return 1
-}
+// 	return 3
+// }
 
-func setMetatable(ls api.LuaState) int {
-	ls.SetMetatable(1)
-	return 1
-}
+// func _iPairsAux(l api.LuaState) int {
+// 	i := l.ToInteger(2) + 1
+// 	l.PushInteger(i)
+// 	if l.GetI(1, i) == api.LUA_TNIL {
+// 		return 1
+// 	} else {
+// 		return 2
+// 	}
+// }
+
+// func getMetatable(ls api.LuaState) int {
+// 	if !ls.GetMetatable(1) {
+// 		ls.PushNil()
+// 	}
+
+// 	return 1
+// }
+
+// func setMetatable(ls api.LuaState) int {
+// 	ls.SetMetatable(1)
+// 	return 1
+// }
 
 func print(ls api.LuaState) int {
 	nArgs := ls.GetTop()

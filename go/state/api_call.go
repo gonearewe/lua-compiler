@@ -17,7 +17,7 @@ func (l *luaState) Load(chunk []byte, chunkName, mode string) int {
 		c.upvals[0] = &upvalue{&env}
 	}
 
-	return 0
+	return api.LUA_OK
 }
 
 // Call LuaClosure, GoClosure or Metamethod with nArgs(number of args)
@@ -60,6 +60,30 @@ func (l *luaState) Call(nArgs, nResults int) {
 	} else {
 		panic("not function !")
 	}
+}
+
+// Call a function that is able to throw an exception, offer exception
+// catching and handling support, refer to Call() for details of basic function calling.
+func (l *luaState) PCall(nArgs, nResults int, msgh int) (status int) {
+	caller := l.stack
+	status = api.LUA_ERRRUN
+
+	// catch error
+	defer func() {
+		if err := recover(); err != nil {
+			// VM recovered, but luaStack remains where exception occurs
+			for l.stack != caller {
+				l.popLuaStack() // roll back to safe luaStack where pcall() is waiting.
+			}
+
+			l.stack.push(err)
+		}
+	}()
+
+	l.Call(nArgs, nResults)
+	status = api.LUA_OK // no exceptions, defer func not excuated
+
+	return
 }
 
 func (l *luaState) callLuaClosure(nArgs, nResults int, c *closure) {
