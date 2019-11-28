@@ -5,8 +5,8 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/gonearewe/lua-compiler/go/api"
-	"github.com/gonearewe/lua-compiler/go/state"
+	"github.com/gonearewe/lua-compiler/api"
+	"github.com/gonearewe/lua-compiler/state"
 )
 
 func main() {

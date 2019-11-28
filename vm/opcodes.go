@@ -1,6 +1,6 @@
 package vm
 
-import "github.com/gonearewe/lua-compiler/go/api"
+import "github.com/gonearewe/lua-compiler/api"
 
 const (
 	IABC  = iota // [  B:9  ][  C:9  ][ A:8  ][OP:6]

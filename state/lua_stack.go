@@ -1,7 +1,7 @@
 package state
 
 import (
-	"github.com/gonearewe/lua-compiler/go/api"
+	"github.com/gonearewe/lua-compiler/api"
 )
 
 type luaStack struct {

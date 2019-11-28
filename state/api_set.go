@@ -1,7 +1,7 @@
 package state
 
 import (
-	"github.com/gonearewe/lua-compiler/go/api"
+	"github.com/gonearewe/lua-compiler/api"
 )
 
 // Pop value and then pop key, record this pair into

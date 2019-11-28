@@ -3,7 +3,7 @@ package state
 import (
 	"math"
 
-	"github.com/gonearewe/lua-compiler/go/number"
+	"github.com/gonearewe/lua-compiler/number"
 )
 
 // In lua, if the keys of the Table are continus int, the table is

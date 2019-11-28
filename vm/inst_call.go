@@ -1,6 +1,6 @@
 package vm
 
-import . "github.com/gonearewe/lua-compiler/go/api"
+import . "github.com/gonearewe/lua-compiler/api"
 
 func closure(i Instruction, vm LuaVM) {
 	a, bx := i.ABx()

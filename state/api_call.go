@@ -1,10 +1,10 @@
 package state
 
 import (
-	"github.com/gonearewe/lua-compiler/go/api"
-	"github.com/gonearewe/lua-compiler/go/vm"
+	"github.com/gonearewe/lua-compiler/api"
+	"github.com/gonearewe/lua-compiler/vm"
 
-	"github.com/gonearewe/lua-compiler/go/binchunk"
+	"github.com/gonearewe/lua-compiler/binchunk"
 )
 
 func (l *luaState) Load(chunk []byte, chunkName, mode string) int {

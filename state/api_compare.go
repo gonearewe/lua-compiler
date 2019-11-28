@@ -1,6 +1,6 @@
 package state
 
-import . "github.com/gonearewe/lua-compiler/go/api"
+import . "github.com/gonearewe/lua-compiler/api"
 
 func (l *luaState) Compare(idx1, idx2 int, op CompareOp) bool {
 	a := l.stack.get(idx1)

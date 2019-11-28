@@ -3,7 +3,7 @@ package state
 import (
 	"fmt"
 
-	. "github.com/gonearewe/lua-compiler/go/api"
+	. "github.com/gonearewe/lua-compiler/api"
 )
 
 func (self *luaState) RawLen(idx int) uint {

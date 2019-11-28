@@ -1,8 +1,8 @@
 package state
 
 import (
-	"github.com/gonearewe/lua-compiler/go/api"
-	"github.com/gonearewe/lua-compiler/go/binchunk"
+	"github.com/gonearewe/lua-compiler/api"
+	"github.com/gonearewe/lua-compiler/binchunk"
 )
 
 type closure struct {

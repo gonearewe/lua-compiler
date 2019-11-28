@@ -1,6 +1,6 @@
 package vm
 
-import . "github.com/gonearewe/lua-compiler/go/api"
+import . "github.com/gonearewe/lua-compiler/api"
 
 // R(A)-=R(A+2); pc+=sBx
 func forPrep(i Instruction, vm LuaVM) {

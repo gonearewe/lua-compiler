@@ -4,7 +4,7 @@ APIs of a series of methods with the purpose of getting value from the table
 package state
 
 import (
-	. "github.com/gonearewe/lua-compiler/go/api"
+	. "github.com/gonearewe/lua-compiler/api"
 )
 
 // When you know exactly how much space to allocate,

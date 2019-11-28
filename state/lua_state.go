@@ -1,6 +1,6 @@
 package state
 
-import "github.com/gonearewe/lua-compiler/go/api"
+import "github.com/gonearewe/lua-compiler/api"
 
 type luaState struct {
 	stack    *luaStack

@@ -3,8 +3,8 @@ package state
 import (
 	"math"
 
-	. "github.com/gonearewe/lua-compiler/go/api"
-	"github.com/gonearewe/lua-compiler/go/number"
+	. "github.com/gonearewe/lua-compiler/api"
+	"github.com/gonearewe/lua-compiler/number"
 )
 
 type operator struct {
