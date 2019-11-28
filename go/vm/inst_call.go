@@ -39,6 +39,15 @@ func tailCall(i Instruction, vm LuaVM) {
 	_popResults(a, c, vm)
 }
 
+func tForCall(i Instruction, vm LuaVM) {
+	a, _, c := i.ABC()
+	a += 1
+
+	_pushFuncAndArgs(a, 3, vm)
+	vm.Call(2, c)
+	_popResults(a+3, c+1, vm)
+}
+
 // To support OOP, object is stored in the register and
 // the method's name is stored in the Constants List
 func self(i Instruction, vm LuaVM) {
@@ -51,6 +60,7 @@ func self(i Instruction, vm LuaVM) {
 	vm.GetTable(b)
 	vm.Replace(a)
 }
+
 func _pushFuncAndArgs(a, b int, vm LuaVM) (nArgs int) {
 	if b >= 1 {
 		vm.CheckStack(b)

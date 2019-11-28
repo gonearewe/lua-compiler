@@ -76,6 +76,7 @@ type LuaState interface {
 	RawGetI(idx int, i int64) LuaType
 	RawSet(idx int)
 	RawSetI(idx int, i int64)
+	Next(idx int) bool
 }
 
 type BasicAPI interface {

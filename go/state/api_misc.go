@@ -44,3 +44,23 @@ func (l *luaState) Concat(n int) {
 	}
 	// if n == 1, do nothing
 }
+
+// Api for iterator, the luaTable's index in the stack is idx, pop current key and
+// push next key, return false if the luaTable is empty or iterating
+// is over in which case nothing is pushed.
+func (l *luaState) Next(idx int) bool {
+	val := l.stack.get(idx)
+	if t, ok := val.(*luaTable); ok {
+		key := l.stack.pop()
+		if nextKey := t.nextKey(key); nextKey != nil {
+			l.stack.push(nextKey)
+			l.stack.push(t.get(nextKey))
+
+			return true
+		}
+
+		return false
+	}
+
+	panic("table expected !")
+}

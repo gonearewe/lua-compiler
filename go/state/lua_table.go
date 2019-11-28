@@ -12,6 +12,10 @@ type luaTable struct {
 	metatable *luaTable
 	arr       []luaValue
 	_map      map[luaValue]luaValue
+	// support iterator, this map is actually a linked list.
+	// for 5-> 3-> 6-> 1, the map stores [nil]5, [5]3, [3]6, [6]1, [1]index4.
+	keys    map[luaValue]luaValue
+	changed bool
 }
 
 func newLuaTable(nArr, nRec int) *luaTable {
@@ -120,4 +124,34 @@ func (l *luaTable) len() int {
 
 func (l *luaTable) hasMetafield(fieldName string) bool {
 	return l.metatable != nil && l.metatable.get(fieldName) != nil
+}
+
+// Method for iterator, receive one key and return next key.
+func (l *luaTable) nextKey(key luaValue) luaValue {
+	if l.keys == nil || key == nil {
+		l.initKeys()
+		l.changed = false
+	}
+
+	return l.keys[key]
+}
+
+// Method for iterator, range arr and _map to organise keys.
+func (l *luaTable) initKeys() {
+	l.keys = make(map[luaValue]luaValue)
+	var key luaValue = nil
+
+	for i, v := range l.arr {
+		if v != nil {
+			l.keys[key] = int64(i + 1)
+			key = int64(i + 1)
+		}
+	}
+
+	for k, v := range l._map {
+		if v != nil {
+			l.keys[key] = k
+			key = k
+		}
+	}
 }
