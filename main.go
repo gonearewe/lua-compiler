@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/gonearewe/lua-compiler/api"
-	"github.com/gonearewe/lua-compiler/state"
+	"github.com/gonearewe/lua-compiler/compiler/lexer"
 )
 
 func main() {
@@ -16,27 +16,70 @@ func main() {
 			panic(err)
 		}
 
-		ls := state.New()
-		ls.Register("print", print)
-		ls.Register("error", error)
-		ls.Register("pcall", pCall)
-		ls.Load(data, os.Args[1], "b")
-		ls.Call(0, 0)
+		testLexer(string(data), os.Args[1])
 	}
 }
 
-func error(ls api.LuaState) int {
-	return ls.Error()
+func testLexer(chunk, chunkName string) {
+	_lexer := lexer.NewLexer(chunk, chunkName)
+	for {
+		line, kind, token := _lexer.NextToken()
+		fmt.Printf("[%2d] [%-10s] %s\n", line, kindToCategory(kind), token)
+		if kind == lexer.TOKEN_EOF {
+			break
+		}
+	}
 }
 
-func pCall(ls api.LuaState) int {
-	nArgs := ls.GetTop() - 1
-	status := ls.PCall(nArgs, -1, 0)
-	ls.PushBoolean(status == api.LUA_OK)
-	ls.Insert(1)
-
-	return ls.GetTop()
+func kindToCategory(kind int) string {
+	switch {
+	case kind < lexer.TOKEN_SEP_SEMI:
+		return "other"
+	case kind <= lexer.TOKEN_SEP_RCURLY:
+		return "separator"
+	case kind <= lexer.TOKEN_OP_NOT:
+		return "operator"
+	case kind <= lexer.TOKEN_KW_WHILE:
+		return "keyword"
+	case kind == lexer.TOKEN_IDENTIFIER:
+		return "identifier"
+	case kind == lexer.TOKEN_NUMBER:
+		return "number"
+	case kind == lexer.TOKEN_STRING:
+		return "string"
+	default:
+		return "other"
+	}
 }
+
+// func main() {
+// 	if len(os.Args) > 1 {
+// 		data, err := ioutil.ReadFile(os.Args[1])
+// 		if err != nil {
+// 			panic(err)
+// 		}
+
+// 		ls := state.New()
+// 		ls.Register("print", print)
+// 		ls.Register("error", error)
+// 		ls.Register("pcall", pCall)
+// 		ls.Load(data, os.Args[1], "b")
+// 		ls.Call(0, 0)
+// 	}
+// }
+
+// func error(ls api.LuaState) int {
+// 	return ls.Error()
+// }
+
+// func pCall(ls api.LuaState) int {
+// 	nArgs := ls.GetTop() - 1
+// 	status := ls.PCall(nArgs, -1, 0)
+// 	ls.PushBoolean(status == api.LUA_OK)
+// 	ls.Insert(1)
+
+// 	return ls.GetTop()
+// }
 
 // func next(ls api.LuaState) int {
 // 	ls.SetTop(2)
