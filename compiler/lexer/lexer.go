@@ -29,10 +29,16 @@ type Lexer struct {
 	nextTokenLine int
 }
 
+// constructor
 func NewLexer(chunk, chunkName string) *Lexer {
 	return &Lexer{chunk, chunkName, 1, "", 0, 0}
 }
 
+func (l *Lexer) Line() int {
+	return l.line
+}
+
+// Scan next token and update cache, returns nextTokenKind.
 func (l *Lexer) LookAhead() int {
 	if l.nextTokenLine > 0 {
 		return l.nextTokenKind
@@ -51,10 +57,12 @@ func (l *Lexer) NextIdentifier() (line int, token string) {
 	return l.NextTokenOfKind(TOKEN_IDENTIFIER)
 }
 
+// Returns line and token of next token if next token matches the given
+// expected kind, or a syntax error will be thrown.
 func (l *Lexer) NextTokenOfKind(kind int) (line int, token string) {
 	line, _kind, token := l.NextToken()
 	if kind != _kind {
-		l.error("syntax error near '%'", token)
+		l.error("syntax error near '%s'", token)
 	}
 
 	return line, token
