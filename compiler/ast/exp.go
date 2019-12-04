@@ -32,6 +32,13 @@ type NameExp struct {
 type UnopExp struct {
 	Line int
 	Op   int
+	Exp  Exp
+}
+
+// exp1 op exp2
+type BinopExp struct {
+	Line int // line of operator
+	Op   int // operator
 	Exp1 Exp
 	Exp2 Exp
 }

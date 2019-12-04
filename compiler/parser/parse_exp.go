@@ -3,7 +3,7 @@ package parser
 import (
 	. "github.com/gonearewe/lua-compiler/compiler/ast"
 	. "github.com/gonearewe/lua-compiler/compiler/lexer"
-	. "github.com/gonearewe/lua-compiler/number"
+	"github.com/gonearewe/lua-compiler/number"
 )
 
 func parseExpList(lexer *Lexer) []Exp {
@@ -247,7 +247,7 @@ func parseFuncDefExp(lexer *Lexer) *FuncDefExp {
 	block := parseBlock(lexer)
 	lastLine, _ := lexer.NextTokenOfKind(TOKEN_KW_END) // `end`
 
-	return &FuncDefExp{line, lastLine, parList, isvararg, block}
+	return &FuncDefExp{line, lastLine, parList, isVararg, block}
 }
 
 func _parseParList(lexer *Lexer) (names []string, isVararg bool) {
@@ -285,4 +285,53 @@ func parseTableConstructorExp(lexer *Lexer) *TableConstructorExp {
 	lexer.NextTokenOfKind(TOKEN_SEP_RCURLY)    // `}`
 	lastLine := lexer.Line()
 	return &TableConstructorExp{line, lastLine, keyExps, valExps}
+}
+
+func _parseFieldList(lexer *Lexer) (ks, vs []Exp) {
+	if lexer.LookAhead() != TOKEN_SEP_RCURLY {
+		k, v := _parseField(lexer) // field
+		ks, vs = append(ks, k), append(vs, v)
+		for _isFieldSep(lexer.LookAhead()) {
+			lexer.NextToken() // fieldsep
+			if lexer.LookAhead() != TOKEN_SEP_RCURLY {
+				k, v := _parseField(lexer) // field
+				ks, vs = append(ks, k), append(vs, v)
+			} else {
+				break
+			}
+		}
+	}
+
+	return
+}
+
+// Tell whether tokenkind(given) is `,` or `;`
+func _isFieldSep(tokenkind int) bool {
+	return tokenkind == TOKEN_SEP_COMMA || tokenkind == TOKEN_SEP_SEMI
+}
+
+func _parseField(lexer *Lexer) (k, v Exp) {
+	if lexer.LookAhead() == TOKEN_SEP_LBRACK {
+		lexer.NextToken()                       // `[`
+		k = parseExp(lexer)                     // exp
+		lexer.NextTokenOfKind(TOKEN_SEP_RBRACK) // `]`
+		lexer.NextTokenOfKind(TOKEN_OP_ASSIGN)  // `=`
+		v = parseExp(lexer)
+
+		return
+	}
+
+	exp := parseExp(lexer)
+	if nameExp, ok := exp.(*NameExp); ok {
+		if lexer.LookAhead() == TOKEN_OP_ASSIGN {
+			// Name `=` exp => `[` LiteralString `]` `=` exp
+			lexer.NextToken()
+			k = &StringExp{nameExp.Line, nameExp.Name}
+			v = parseExp(lexer)
+
+			return
+		}
+	}
+
+	return nil, exp
 }

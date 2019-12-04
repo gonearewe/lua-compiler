@@ -64,7 +64,7 @@ func parseBreakStat(lexer *Lexer) *BreakStat {
 }
 
 // `::label_name::`
-func parseLableStat(lexer *Lexer) *LabelStat {
+func parseLabelStat(lexer *Lexer) *LabelStat {
 	lexer.NextTokenOfKind(TOKEN_SEP_LABEL) // `::`
 	_, name := lexer.NextIdentifier()      // Name
 	lexer.NextTokenOfKind(TOKEN_SEP_LABEL) // `::`
@@ -97,8 +97,17 @@ func parseWhileStat(lexer *Lexer) *WhileStat {
 	block := parseBlock(lexer)            // block
 	lexer.NextTokenOfKind(TOKEN_KW_END)   // `end`
 
-	return &RepeatStat(block, exp)
+	return &WhileStat{exp, block}
 
+}
+
+// `repeat` block `until` exp
+func parseRepeatStat(lexer *Lexer) *RepeatStat {
+	lexer.NextTokenOfKind(TOKEN_KW_REPEAT) // `repeat`
+	block := parseBlock(lexer)             // block
+	lexer.NextTokenOfKind(TOKEN_KW_UNTIL)  // `until`
+	exp := parseExp(lexer)                 // exp
+	return &RepeatStat{block, exp}
 }
 
 // `if exp then block {elseif exp then block} [else block] end`
@@ -142,7 +151,7 @@ func parseForStat(lexer *Lexer) Stat {
 	}
 }
 
-func _finishForNumStat(lexer *Lexer, lineOfFor int, name string) *ForNumStat {
+func _finishForNumStat(lexer *Lexer, lineOfFor int, varName string) *ForNumStat {
 	lexer.NextTokenOfKind(TOKEN_OP_ASSIGN) // `=`
 	initExp := parseExp(lexer)             // exp
 	lexer.NextTokenOfKind(TOKEN_SEP_COMMA) // `,`
@@ -187,7 +196,7 @@ func _finishNameList(lexer *Lexer, name0 string) []string {
 
 /* local function definition and variable declaration */
 
-func parseLocalAssignOrFuncdefStat(lexer *Lexer) Stat {
+func parseLocalAssignOrFuncDefStat(lexer *Lexer) Stat {
 	lexer.NextTokenOfKind(TOKEN_KW_LOCAL) // `local`
 	if lexer.LookAhead() == TOKEN_KW_FUNCTION {
 		return _finishLocalFuncDefStat(lexer)
@@ -233,7 +242,7 @@ func parseAssignStat(lexer *Lexer, var0 Exp) *AssignStat {
 	varList := _finishVarList(lexer, var0) // varlist
 	lexer.NextTokenOfKind(TOKEN_OP_ASSIGN) // `=`
 	expList := parseExpList(lexer)         // explist
-	lastline := lexer.Line()
+	lastLine := lexer.Line()
 
 	return &AssignStat{lastLine, varList, expList}
 }

@@ -1,12 +1,13 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
 
 	"github.com/gonearewe/lua-compiler/api"
-	"github.com/gonearewe/lua-compiler/compiler/lexer"
+	"github.com/gonearewe/lua-compiler/compiler/parser"
 )
 
 func main() {
@@ -16,41 +17,51 @@ func main() {
 			panic(err)
 		}
 
-		testLexer(string(data), os.Args[1])
+		testParser(string(data), os.Args[1])
 	}
 }
 
-func testLexer(chunk, chunkName string) {
-	_lexer := lexer.NewLexer(chunk, chunkName)
-	for {
-		line, kind, token := _lexer.NextToken()
-		fmt.Printf("[%2d] [%-10s] %s\n", line, kindToCategory(kind), token)
-		if kind == lexer.TOKEN_EOF {
-			break
-		}
+func testParser(chunk, chunkName string) {
+	ast := parser.Parse(chunk, chunkName)
+	b, err := json.Marshal(ast)
+	if err != nil {
+		panic(err)
 	}
+
+	println(string(b))
 }
 
-func kindToCategory(kind int) string {
-	switch {
-	case kind < lexer.TOKEN_SEP_SEMI:
-		return "other"
-	case kind <= lexer.TOKEN_SEP_RCURLY:
-		return "separator"
-	case kind <= lexer.TOKEN_OP_NOT:
-		return "operator"
-	case kind <= lexer.TOKEN_KW_WHILE:
-		return "keyword"
-	case kind == lexer.TOKEN_IDENTIFIER:
-		return "identifier"
-	case kind == lexer.TOKEN_NUMBER:
-		return "number"
-	case kind == lexer.TOKEN_STRING:
-		return "string"
-	default:
-		return "other"
-	}
-}
+// func testLexer(chunk, chunkName string) {
+// 	_lexer := lexer.NewLexer(chunk, chunkName)
+// 	for {
+// 		line, kind, token := _lexer.NextToken()
+// 		fmt.Printf("[%2d] [%-10s] %s\n", line, kindToCategory(kind), token)
+// 		if kind == lexer.TOKEN_EOF {
+// 			break
+// 		}
+// 	}
+// }
+
+// func kindToCategory(kind int) string {
+// 	switch {
+// 	case kind < lexer.TOKEN_SEP_SEMI:
+// 		return "other"
+// 	case kind <= lexer.TOKEN_SEP_RCURLY:
+// 		return "separator"
+// 	case kind <= lexer.TOKEN_OP_NOT:
+// 		return "operator"
+// 	case kind <= lexer.TOKEN_KW_WHILE:
+// 		return "keyword"
+// 	case kind == lexer.TOKEN_IDENTIFIER:
+// 		return "identifier"
+// 	case kind == lexer.TOKEN_NUMBER:
+// 		return "number"
+// 	case kind == lexer.TOKEN_STRING:
+// 		return "string"
+// 	default:
+// 		return "other"
+// 	}
+// }
 
 // func main() {
 // 	if len(os.Args) > 1 {

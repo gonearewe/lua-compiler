@@ -17,7 +17,7 @@ func parseBlock(lexer *Lexer) *Block {
 func parseStats(lexer *Lexer) []Stat {
 	stats := make([]Stat, 0, 8)
 	for !_isReturnOrBlockEnd(lexer.LookAhead()) {
-		stat := parseStats(lexer)
+		stat := parseStat(lexer)
 		if _, ok := stat.(*EmptyStat); !ok {
 			stats = append(stats, stat)
 		}
