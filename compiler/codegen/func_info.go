@@ -1,6 +1,13 @@
 package codegen
 
+import (
+	. "github.com/gonearewe/lua-compiler/compiler/ast"
+	. "github.com/gonearewe/lua-compiler/compiler/lexer"
+)
+
 type funcInfo struct {
+	insts []uint32 // corresponded instructions in binary chunk
+
 	constants map[interface{}]int // key is the constant's value and val is it's index in the constant list
 	usedRegs  int
 	maxRegs   int
@@ -13,6 +20,10 @@ type funcInfo struct {
 
 	parent   *funcInfo
 	upvalues map[string]upvalInfo
+
+	subFuncs  []*funcInfo
+	numParams int
+	isVararg  bool
 }
 
 // In lua, variable's name is just a label, a rather different thing from variable itself.
@@ -29,6 +40,21 @@ type upvalInfo struct {
 	locVarSlot int
 	upvalIndex int
 	index      int
+}
+
+func (f *funcInfo) newFuncInfo(parent *funcInfo, fd *FuncDefExp) *funcInfo {
+	return &funcInfo{
+		parent:    parent,
+		subFuncs:  []*funcInfo{},
+		locVars:   make([]*locVarInfo, 0, 8),
+		locNames:  map[string]*locVarInfo{},
+		upvalues:  map[string]upvalInfo{},
+		constants: map[interface{}]int{},
+		breaks:    make([][]int, 1),
+		insts:     make([]uint32, 0, 8),
+		numParams: len(fd.ParList),
+		isVararg:  fd.IsVararg,
+	}
 }
 
 // Return index of k in the constant list if found, if not,
@@ -165,4 +191,208 @@ func (f *funcInfo) indexOfUpval(name string) int {
 	}
 
 	return -1
+}
+
+/* instructions generation */
+
+func (f *funcInfo) pc() int {
+	return len(f.insts) - 1
+}
+
+func (self *funcInfo) fixSbx(pc, sBx int) {
+	i := self.insts[pc]
+	i = i << 18 >> 18                  // clear sBx
+	i = i | uint32(sBx+MAXARG_sBx)<<14 // reset sBx
+	self.insts[pc] = i
+}
+
+func (self *funcInfo) emitABC(opcode, a, b, c int) {
+	i := b<<23 | c<<14 | a<<6 | opcode
+	self.insts = append(self.insts, uint32(i))
+}
+
+func (self *funcInfo) emitABx(opcode, a, bx int) {
+	i := bx<<14 | a<<6 | opcode
+	self.insts = append(self.insts, uint32(i))
+}
+
+func (self *funcInfo) emitAsBx(opcode, a, b int) {
+	i := (b+MAXARG_sBx)<<14 | a<<6 | opcode
+	self.insts = append(self.insts, uint32(i))
+}
+
+func (self *funcInfo) emitAx(opcode, ax int) {
+	i := ax<<6 | opcode
+	self.insts = append(self.insts, uint32(i))
+}
+
+// r[a] = r[b]
+func (self *funcInfo) emitMove(a, b int) {
+	self.emitABC(OP_MOVE, a, b, 0)
+}
+
+// r[a], r[a+1], ..., r[a+b] = nil
+func (self *funcInfo) emitLoadNil(a, n int) {
+	self.emitABC(OP_LOADNIL, a, n-1, 0)
+}
+
+// r[a] = (bool)b; if (c) pc++
+func (self *funcInfo) emitLoadBool(a, b, c int) {
+	self.emitABC(OP_LOADBOOL, a, b, c)
+}
+
+// r[a] = kst[bx]
+func (self *funcInfo) emitLoadK(a int, k interface{}) {
+	idx := self.indexOfConstant(k)
+	if idx < (1 << 18) {
+		self.emitABx(OP_LOADK, a, idx)
+	} else {
+		self.emitABx(OP_LOADKX, a, 0)
+		self.emitAx(OP_EXTRAARG, idx)
+	}
+}
+
+// r[a], r[a+1], ..., r[a+b-2] = vararg
+func (self *funcInfo) emitVararg(a, n int) {
+	self.emitABC(OP_VARARG, a, n+1, 0)
+}
+
+// r[a] = emitClosure(proto[bx])
+func (self *funcInfo) emitClosure(a, bx int) {
+	self.emitABx(OP_CLOSURE, a, bx)
+}
+
+// r[a] = {}
+func (self *funcInfo) emitNewTable(a, nArr, nRec int) {
+	self.emitABC(OP_NEWTABLE,
+		a, Int2fb(nArr), Int2fb(nRec))
+}
+
+// r[a][(c-1)*FPF+i] := r[a+i], 1 <= i <= b
+func (self *funcInfo) emitSetList(a, b, c int) {
+	self.emitABC(OP_SETLIST, a, b, c)
+}
+
+// r[a] := r[b][rk(c)]
+func (self *funcInfo) emitGetTable(a, b, c int) {
+	self.emitABC(OP_GETTABLE, a, b, c)
+}
+
+// r[a][rk(b)] = rk(c)
+func (self *funcInfo) emitSetTable(a, b, c int) {
+	self.emitABC(OP_SETTABLE, a, b, c)
+}
+
+// r[a] = upval[b]
+func (self *funcInfo) emitGetUpval(a, b int) {
+	self.emitABC(OP_GETUPVAL, a, b, 0)
+}
+
+// upval[b] = r[a]
+func (self *funcInfo) emitSetUpval(a, b int) {
+	self.emitABC(OP_SETUPVAL, a, b, 0)
+}
+
+// r[a] = upval[b][rk(c)]
+func (self *funcInfo) emitGetTabUp(a, b, c int) {
+	self.emitABC(OP_GETTABUP, a, b, c)
+}
+
+// upval[a][rk(b)] = rk(c)
+func (self *funcInfo) emitSetTabUp(a, b, c int) {
+	self.emitABC(OP_SETTABUP, a, b, c)
+}
+
+// r[a], ..., r[a+c-2] = r[a](r[a+1], ..., r[a+b-1])
+func (self *funcInfo) emitCall(a, nArgs, nRet int) {
+	self.emitABC(OP_CALL, a, nArgs+1, nRet+1)
+}
+
+// return r[a](r[a+1], ... ,r[a+b-1])
+func (self *funcInfo) emitTailCall(a, nArgs int) {
+	self.emitABC(OP_TAILCALL, a, nArgs+1, 0)
+}
+
+// return r[a], ... ,r[a+b-2]
+func (self *funcInfo) emitReturn(a, n int) {
+	self.emitABC(OP_RETURN, a, n+1, 0)
+}
+
+// r[a+1] := r[b]; r[a] := r[b][rk(c)]
+func (self *funcInfo) emitSelf(a, b, c int) {
+	self.emitABC(OP_SELF, a, b, c)
+}
+
+// pc+=sBx; if (a) close all upvalues >= r[a - 1]
+func (self *funcInfo) emitJmp(a, sBx int) int {
+	self.emitAsBx(OP_JMP, a, sBx)
+	return len(self.insts) - 1
+}
+
+// if not (r[a] <=> c) then pc++
+func (self *funcInfo) emitTest(a, c int) {
+	self.emitABC(OP_TEST, a, 0, c)
+}
+
+// if (r[b] <=> c) then r[a] := r[b] else pc++
+func (self *funcInfo) emitTestSet(a, b, c int) {
+	self.emitABC(OP_TESTSET, a, b, c)
+}
+
+func (self *funcInfo) emitForPrep(a, sBx int) int {
+	self.emitAsBx(OP_FORPREP, a, sBx)
+	return len(self.insts) - 1
+}
+
+func (self *funcInfo) emitForLoop(a, sBx int) int {
+	self.emitAsBx(OP_FORLOOP, a, sBx)
+	return len(self.insts) - 1
+}
+
+func (self *funcInfo) emitTForCall(a, c int) {
+	self.emitABC(OP_TFORCALL, a, 0, c)
+}
+
+func (self *funcInfo) emitTForLoop(a, sBx int) {
+	self.emitAsBx(OP_TFORLOOP, a, sBx)
+}
+
+// r[a] = op r[b]
+func (self *funcInfo) emitUnaryOp(op, a, b int) {
+	switch op {
+	case TOKEN_OP_NOT:
+		self.emitABC(OP_NOT, a, b, 0)
+	case TOKEN_OP_BNOT:
+		self.emitABC(OP_BNOT, a, b, 0)
+	case TOKEN_OP_LEN:
+		self.emitABC(OP_LEN, a, b, 0)
+	case TOKEN_OP_UNM:
+		self.emitABC(OP_UNM, a, b, 0)
+	}
+}
+
+// r[a] = rk[b] op rk[c]
+// arith & bitwise & relational
+func (self *funcInfo) emitBinaryOp(op, a, b, c int) {
+	if opcode, found := arithAndBitwiseBinops[op]; found {
+		self.emitABC(opcode, a, b, c)
+	} else {
+		switch op {
+		case TOKEN_OP_EQ:
+			self.emitABC(OP_EQ, 1, b, c)
+		case TOKEN_OP_NE:
+			self.emitABC(OP_EQ, 0, b, c)
+		case TOKEN_OP_LT:
+			self.emitABC(OP_LT, 1, b, c)
+		case TOKEN_OP_GT:
+			self.emitABC(OP_LT, 1, c, b)
+		case TOKEN_OP_LE:
+			self.emitABC(OP_LE, 1, b, c)
+		case TOKEN_OP_GE:
+			self.emitABC(OP_LE, 1, c, b)
+		}
+		self.emitJmp(0, 1)
+		self.emitLoadBool(a, 0, 1)
+		self.emitLoadBool(a, 1, 0)
+	}
 }
