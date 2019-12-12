@@ -194,3 +194,122 @@ func cgForInStat(fi *funcInfo, node *ForInStat) {
 	fi.exitScope()
 
 }
+
+func cgLocalVarDeclStat(fi *funcInfo, node *LocalVarDeclStat) {
+	exps := removeTailNils(node.ExpList)
+	nExps := len(exps)
+	nNames := len(node.NameList)
+
+	oldRegs := fi.usedRegs
+	if nExps == nNames {
+		for _, exp := range exps {
+			a := fi.allocReg()
+			cgExp(fi, exp, a, 1)
+		}
+	} else if nExps > nNames {
+		for i, exp := range exps {
+			a := fi.allocReg()
+			if i == nExps-1 && isVarargOrFuncCall(exp) {
+				cgExp(fi, exp, a, 0)
+			} else {
+				cgExp(fi, exp, a, 1)
+			}
+		}
+	} else {
+		multRet := false
+		for i, exp := range exps {
+			a := fi.allocReg()
+			if i == nExps-1 && isVarargOrFuncCall(exp) {
+				multRet = true
+				n := nNames - nExps + 1
+				cgExp(fi, exp, a, n)
+				fi.allocRegs(n - 1)
+			} else {
+				cgExp(fi, exp, a, 1)
+			}
+		}
+
+		if !multRet {
+			n := nNames - nExps
+			a := fi.allocRegs(n)
+			fi.emitLoadNil(a, n)
+		}
+	}
+
+	fi.usedRegs = oldRegs
+	for _, name := range node.NameList {
+		fi.addLocVar(name)
+	}
+}
+
+func cgAssignStat(fi *funcInfo, node *AssignStat) {
+	exps := removeTailNils(node.ExpList)
+	nExps := len(exps)
+	nVars := len(node.VarList)
+	oldRegs := fi.usedRegs
+	tRegs := make([]int, nVars)
+	kRegs := make([]int, nVars)
+	vRegs := make([]int, nVars)
+
+	for i, exp := range node.VarList {
+		if taExp, ok := exp.(*TableAccessExp); ok {
+			tRegs[i] = fi.allocReg()
+			cgExp(fi, taExp.PrefixExp, tRegs[i], 1)
+			kRegs[i] = fi.allocReg()
+			cgExp(fi, taExp.KeyExp, kRegs[i], 1)
+		}
+	}
+
+	for i := 0; i < nVars; i++ {
+		vRegs[i] = fi.usedRegs + i
+	}
+
+	if nExps >= nVars {
+		for i, exp := range exps {
+			a := fi.allocReg()
+			if i >= nVars && i == nExps-1 && isVarargOrFuncCall(exp) {
+				cgExp(fi, exp, a, 0)
+			} else {
+				cgExp(fi, exp, a, 1)
+			}
+		}
+	} else {
+		multReg := false
+		for i, exp := range exps {
+			a := allocReg()
+			if i == nExps-1 && isVarargOrFuncCall(exp) {
+				multReg = true
+				n := nVars - nExps + 1
+				cgExp(fi, exp, a, n)
+				fi.allocReg(n - 1)
+			} else {
+				cgExp(fi, exp, a, 1)
+			}
+		}
+
+		if !multReg {
+			n := nVars - nExps
+			a := fi.allocRegs(n)
+			fi.emitLoadNil(a, n)
+		}
+	}
+
+	for i, exp := range node.VarList {
+		if nameExp, ok := exp.(*NameExp); ok {
+			varName := nameExp.Name
+			if a := fi.slotOfLocVar(varName); a >= 0 {
+				fi.emitMove(a, vRegs[i])
+			} else if b := fi.indexOfUpval(varName); b >= 0 {
+				fi.emitSetUpval(vRegs[i], b)
+			} else { // global variable
+				a := fi.indexOfUpval("_ENV")
+				b := 0x100 + fi.indexOfConstant(varName)
+				fi.emitSetTabUp(a, b, vRegs[i])
+			}
+		} else {
+			fi.emitSetTable(tRegs[i], kRegs[i], vRegs[i])
+		}
+	}
+
+	fi.usedRegs = oldRegs
+}

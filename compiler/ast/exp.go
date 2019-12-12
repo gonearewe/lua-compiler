@@ -86,7 +86,7 @@ type ParensExp struct {
 
 type TableAccessExp struct {
 	LastLine  int // line of `]`
-	Prefixexp Exp
+	PrefixExp Exp
 	KeyExp    Exp
 }
 
