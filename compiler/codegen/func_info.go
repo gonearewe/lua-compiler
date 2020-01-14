@@ -3,7 +3,23 @@ package codegen
 import (
 	. "github.com/gonearewe/lua-compiler/compiler/ast"
 	. "github.com/gonearewe/lua-compiler/compiler/lexer"
+	. "github.com/gonearewe/lua-compiler/vm"
 )
+
+var arithAndBitwiseBinops = map[int]int{
+	TOKEN_OP_ADD:  OP_ADD,
+	TOKEN_OP_SUB:  OP_SUB,
+	TOKEN_OP_MUL:  OP_MUL,
+	TOKEN_OP_MOD:  OP_MOD,
+	TOKEN_OP_POW:  OP_POW,
+	TOKEN_OP_DIV:  OP_DIV,
+	TOKEN_OP_IDIV: OP_IDIV,
+	TOKEN_OP_BAND: OP_BAND,
+	TOKEN_OP_BOR:  OP_BOR,
+	TOKEN_OP_BXOR: OP_BXOR,
+	TOKEN_OP_SHL:  OP_SHL,
+	TOKEN_OP_SHR:  OP_SHR,
+}
 
 type funcInfo struct {
 	insts []uint32 // corresponded instructions in binary chunk
@@ -42,6 +58,21 @@ type upvalInfo struct {
 	index      int
 }
 
+func newFuncInfo(parent *funcInfo, fd *FuncDefExp) *funcInfo {
+	return &funcInfo{
+		parent:    parent,
+		subFuncs:  []*funcInfo{},
+		locVars:   make([]*locVarInfo, 0, 8),
+		locNames:  map[string]*locVarInfo{},
+		upvalues:  map[string]upvalInfo{},
+		constants: map[interface{}]int{},
+		breaks:    make([][]int, 1),
+		insts:     make([]uint32, 0, 8),
+		numParams: len(fd.ParList),
+		isVararg:  fd.IsVararg,
+	}
+}
+
 func (f *funcInfo) newFuncInfo(parent *funcInfo, fd *FuncDefExp) *funcInfo {
 	return &funcInfo{
 		parent:    parent,
@@ -68,6 +99,24 @@ func (f *funcInfo) indexOfConstant(k interface{}) int {
 	f.constants[k] = idx
 
 	return idx
+}
+
+func (self *funcInfo) allocReg() int {
+	self.usedRegs++
+	if self.usedRegs >= 255 {
+		panic("function or expression needs too many registers")
+	}
+	if self.usedRegs > self.maxRegs {
+		self.maxRegs = self.usedRegs
+	}
+	return self.usedRegs - 1
+}
+
+func (self *funcInfo) freeReg() {
+	if self.usedRegs <= 0 {
+		panic("usedRegs <= 0 !")
+	}
+	self.usedRegs--
 }
 
 func (f *funcInfo) allocRegs() int {
